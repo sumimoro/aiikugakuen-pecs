@@ -1,0 +1,9 @@
+{
+  "hosting": [
+    {
+      "target": "pecs",
+      "public": ".",
+      "ignore": ["firebase.json", ".firebaserc", ".DS_Store"]
+    }
+  ]
+}

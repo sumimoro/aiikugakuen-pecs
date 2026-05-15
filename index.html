@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PECSフェーズIV</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blue:#1a6fba;--blue-l:#e8f3fd;
+  --green:#1a9e5e;--green-l:#e6f8f1;
+  --orange:#e67e22;--red:#e74c3c;
+  --strip-bg:#fffbe6;--strip-bd:#f0c040;
+  --bg:#edf2f7;--card-bg:#fff;--border:#dde3ec;
+}
+html,body{height:100%;overflow:hidden;}
+body{font-family:-apple-system,'Hiragino Sans',sans-serif;background:var(--bg);color:#333;display:flex;flex-direction:column;touch-action:none;-webkit-user-select:none;user-select:none;}
+button{cursor:pointer;font-family:inherit;border:none;-webkit-tap-highlight-color:transparent;}
+
+/* ===== HEADER ===== */
+.hdr{background:var(--blue);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+.hdr-icon{font-size:1.8rem;}
+.hdr-title{font-size:1.1rem;font-weight:800;letter-spacing:.5px;}
+.hdr-sub{font-size:.72rem;opacity:.7;}
+.hdr-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.person-sel{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:#fff;border-radius:22px;padding:6px 14px;font-size:.88rem;font-weight:700;min-width:120px;}
+.person-sel option{color:#333;background:#fff;}
+.btn-settings{background:rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:6px 12px;font-size:.82rem;font-weight:700;}
+
+/* ===== MAIN LAYOUT ===== */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ===== SENTENCE STRIP ===== */
+.strip-section{background:var(--strip-bg);border-bottom:3px solid var(--strip-bd);flex-shrink:0;padding:12px 16px 10px;transition:all .2s;}
+.strip-section.drag-over{background:#fff3b0;border-color:#e6ac00;box-shadow:inset 0 0 0 3px #f0c040;}
+.strip-hint{font-size:.72rem;font-weight:700;color:#b8860b;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.strip-row{display:flex;align-items:center;gap:10px;min-height:90px;flex-wrap:wrap;}
+.strip-fixed-card{background:var(--blue);color:#fff;border-radius:16px;width:80px;height:80px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;flex-shrink:0;box-shadow:0 3px 10px rgba(26,111,186,.3);}
+.strip-arrow{font-size:1.4rem;color:#c8a800;flex-shrink:0;}
+.strip-slot{width:80px;height:80px;border:2.5px dashed #d4b200;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#d4b200;font-size:1.4rem;flex-shrink:0;}
+.strip-placed{position:relative;width:80px;height:80px;background:#fff;border:2.5px solid var(--strip-bd);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.1);animation:plop .25s ease;}
+@keyframes plop{0%{transform:scale(.6);opacity:.4;}70%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
+.strip-placed .p-emoji{font-size:2rem;line-height:1;}
+.strip-placed .p-label{font-size:.65rem;font-weight:700;color:#555;text-align:center;line-height:1.2;max-width:74px;overflow:hidden;}
+.strip-placed .p-del{position:absolute;top:-8px;right:-8px;background:var(--red);color:#fff;border-radius:50%;width:24px;height:24px;font-size:.85rem;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(231,76,60,.4);}
+
+/* ===== TELL BUTTON ===== */
+.tell-row{display:flex;gap:10px;padding:10px 16px;flex-shrink:0;background:#fff;border-bottom:1px solid var(--border);}
+.btn-tell{flex:1;background:var(--green);color:#fff;border-radius:16px;padding:14px;font-size:1.05rem;font-weight:800;box-shadow:0 4px 14px rgba(26,158,94,.35);display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s;}
+.btn-tell:active{transform:scale(.97);}
+.btn-tell.disabled{background:#ccc;box-shadow:none;}
+.btn-clear{background:#f0f2f5;color:#888;border-radius:16px;padding:14px 18px;font-size:.95rem;font-weight:700;}
+
+/* ===== CATEGORY TABS ===== */
+.cat-bar{display:flex;gap:8px;padding:10px 14px 6px;overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch;}
+.cat-bar::-webkit-scrollbar{display:none;}
+.cat-tab{background:#fff;border:2px solid var(--border);border-radius:24px;padding:7px 18px;font-size:.85rem;font-weight:700;color:#666;white-space:nowrap;flex-shrink:0;transition:all .15s;}
+.cat-tab.act{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+/* ===== CARD GRID ===== */
+.card-area{flex:1;overflow-y:auto;padding:8px 12px 24px;-webkit-overflow-scrolling:touch;}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;}
+.pecs-card{background:#fff;border:2.5px solid var(--border);border-radius:18px;padding:12px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:border-color .15s,transform .1s;cursor:grab;touch-action:none;}
+.pecs-card:active{border-color:var(--blue);transform:scale(.94);}
+.pecs-card.grabbing{opacity:.35;border-color:var(--blue);}
+.pecs-card .c-emoji{font-size:2.4rem;line-height:1;}
+.pecs-card .c-label{font-size:.75rem;font-weight:700;color:#444;text-align:center;line-height:1.3;}
+
+/* ===== DRAG GHOST ===== */
+.drag-ghost{position:fixed;pointer-events:none;z-index:9999;background:#fff;border:3px solid var(--blue);border-radius:18px;width:90px;height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 8px 24px rgba(0,0,0,.25);transform:translate(-50%,-50%) scale(1.12);transition:transform .1s;}
+.drag-ghost .g-emoji{font-size:2.4rem;line-height:1;}
+.drag-ghost .g-label{font-size:.73rem;font-weight:700;color:#333;text-align:center;}
+
+/* ===== BOTTOM TABS ===== */
+.bottom-tabs{display:flex;background:#fff;border-top:1.5px solid var(--border);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom);}
+.btab{flex:1;padding:10px 4px 8px;font-size:.72rem;font-weight:700;color:#999;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.btab .btab-icon{font-size:1.4rem;}
+.btab.act{color:var(--blue);}
+
+/* ===== PANELS ===== */
+.panel{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.panel.act{display:flex;}
+
+/* ===== CARD MGMT ===== */
+.mgmt-bar{padding:12px 16px;display:flex;align-items:center;gap:10px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;}
+.mgmt-bar h2{flex:1;font-size:1rem;font-weight:800;}
+.btn-add{background:var(--blue);color:#fff;border-radius:12px;padding:8px 16px;font-size:.85rem;font-weight:700;}
+.card-list-wrap{flex:1;overflow-y:auto;padding:10px 14px;}
+.card-item{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.ci-emoji{font-size:2.2rem;width:44px;text-align:center;}
+.ci-info{flex:1;}
+.ci-name{font-weight:700;font-size:.95rem;}
+.ci-cat{font-size:.75rem;color:#888;margin-top:2px;}
+.ci-acts{display:flex;gap:6px;}
+.btn-edit{background:#eef2ff;color:var(--blue);border-radius:9px;padding:6px 12px;font-size:.78rem;font-weight:700;}
+.btn-del{background:#fef2f2;color:var(--red);border-radius:9px;padding:6px 12px;font-size:.78rem;font-weight:700;}
+
+/* ===== LOG ===== */
+.log-bar{padding:10px 14px;display:flex;gap:8px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;}
+.log-bar input,.log-bar select{border:1.5px solid var(--border);border-radius:10px;padding:7px 12px;font-size:.83rem;flex:1;}
+.log-list-wrap{flex:1;overflow-y:auto;padding:10px 14px;}
+.log-item{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;}
+.log-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.log-time{font-size:.73rem;color:#888;}
+.log-person{font-size:.78rem;font-weight:700;color:var(--blue);}
+.log-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.log-chip{background:var(--blue-l,#e8f3fd);border:1px solid #c0d9f5;border-radius:10px;padding:5px 12px;font-size:.83rem;font-weight:700;display:flex;align-items:center;gap:4px;}
+.log-chip-fix{background:var(--blue);color:#fff;border-color:var(--blue);}
+.log-arrow{font-size:1.1rem;color:#aaa;}
+.log-empty{text-align:center;color:#bbb;padding:60px 0;font-size:.9rem;}
+
+/* ===== MODAL ===== */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:flex-end;justify-content:center;}
+.overlay.show{display:flex;}
+.modal{background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 32px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;}
+.modal-handle{width:40px;height:4px;background:#ddd;border-radius:4px;margin:0 auto 18px;}
+.modal-title{font-size:1.05rem;font-weight:800;margin-bottom:18px;}
+.form-row{margin-bottom:14px;}
+.form-row label{font-size:.8rem;font-weight:700;color:#555;display:block;margin-bottom:5px;}
+.form-inp{width:100%;border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;font-size:.95rem;}
+.form-inp:focus{outline:none;border-color:var(--blue);}
+.emoji-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px;}
+.emoji-btn{font-size:1.8rem;background:#f5f7fa;border-radius:10px;padding:7px 4px;text-align:center;border:2.5px solid transparent;}
+.emoji-btn.sel{border-color:var(--blue);background:var(--blue-l,#e8f3fd);}
+.form-acts{display:flex;gap:10px;margin-top:18px;}
+.btn-save{flex:1;background:var(--blue);color:#fff;border-radius:14px;padding:13px;font-weight:800;font-size:1rem;}
+.btn-cancel{background:#f0f2f5;color:#666;border-radius:14px;padding:13px 18px;font-weight:700;}
+
+/* ===== TELL ANIM ===== */
+.tell-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1a9e5e,#0d6e42);z-index:800;display:none;align-items:center;justify-content:center;flex-direction:column;gap:20px;}
+.tell-screen.show{display:flex;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;}}
+.tell-hand{font-size:6rem;animation:wave 1s ease infinite alternate;}
+@keyframes wave{from{transform:rotate(-10deg);}to{transform:rotate(10deg);}}
+.tell-title{color:#fff;font-size:1.8rem;font-weight:900;}
+.tell-cards{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;padding:0 20px;}
+.tell-card-item{background:#fff;border-radius:16px;padding:12px 16px;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:80px;}
+.tell-card-item .te{font-size:2.2rem;}
+.tell-card-item .tl{font-size:.78rem;font-weight:700;color:#333;}
+.tell-card-fix{background:var(--blue);border-radius:16px;padding:12px 18px;color:#fff;font-size:1.1rem;font-weight:800;}
+.tell-dismiss{color:rgba(255,255,255,.7);font-size:.88rem;margin-top:8px;}
+
+/* ===== TOAST ===== */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 24px;border-radius:30px;font-size:.88rem;font-weight:700;z-index:9998;display:none;white-space:nowrap;}
+.toast.show{display:block;animation:tpop 2.2s ease forwards;}
+@keyframes tpop{0%{opacity:0;transform:translateX(-50%) translateY(8px);}12%{opacity:1;transform:translateX(-50%) translateY(0);}80%{opacity:1;}100%{opacity:0;}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-icon">🗣️</div>
+  <div>
+    <div class="hdr-title">PECSフェーズIV</div>
+    <div class="hdr-sub">文章で伝えよう</div>
+  </div>
+  <div class="hdr-right">
+    <select class="person-sel" id="personSel"><option value="">利用者を選択</option></select>
+  </div>
+</div>
+
+<!-- COMMUNICATION PANEL -->
+<div class="panel act" id="panel-comm">
+  <!-- Sentence Strip -->
+  <div class="strip-section" id="stripSection">
+    <div class="strip-hint">📋 ここにカードをドラッグ</div>
+    <div class="strip-row" id="stripRow">
+      <div class="strip-fixed-card">ください</div>
+      <div class="strip-arrow">←</div>
+      <div class="strip-slot" id="stripSlot">＋</div>
+    </div>
+  </div>
+  <!-- Tell Button -->
+  <div class="tell-row">
+    <button class="btn-tell disabled" id="btnTell" onclick="tell()">✋ 伝える</button>
+    <button class="btn-clear" onclick="clearStrip()">✕</button>
+  </div>
+  <!-- Categories -->
+  <div class="cat-bar" id="catBar"></div>
+  <!-- Cards -->
+  <div class="card-area">
+    <div class="card-grid" id="cardGrid"></div>
+  </div>
+</div>
+
+<!-- CARD MGMT PANEL -->
+<div class="panel" id="panel-cards">
+  <div class="mgmt-bar">
+    <h2>🃏 カード管理</h2>
+    <button class="btn-add" onclick="openModal()">＋ 追加</button>
+  </div>
+  <div class="card-list-wrap" id="cardListWrap"></div>
+</div>
+
+<!-- LOG PANEL -->
+<div class="panel" id="panel-log">
+  <div class="log-bar">
+    <input type="date" id="logDate" onchange="renderLog()">
+    <select id="logPerson" onchange="renderLog()"><option value="">全員</option></select>
+  </div>
+  <div class="log-list-wrap" id="logListWrap"></div>
+</div>
+
+<!-- BOTTOM TABS -->
+<div class="bottom-tabs">
+  <button class="btab act" id="btab-comm" onclick="switchPanel('comm')">
+    <span class="btab-icon">🗣️</span>コミュニケーション
+  </button>
+  <button class="btab" id="btab-cards" onclick="switchPanel('cards')">
+    <span class="btab-icon">🃏</span>カード管理
+  </button>
+  <button class="btab" id="btab-log" onclick="switchPanel('log')">
+    <span class="btab-icon">📊</span>記録
+  </button>
+</div>
+
+<!-- DRAG GHOST -->
+<div class="drag-ghost" id="dragGhost" style="display:none">
+  <div class="g-emoji" id="ghostEmoji"></div>
+  <div class="g-label" id="ghostLabel"></div>
+</div>
+
+<!-- TELL ANIMATION -->
+<div class="tell-screen" id="tellScreen" onclick="this.classList.remove('show')">
+  <div class="tell-hand">✋</div>
+  <div class="tell-title">伝えました！</div>
+  <div class="tell-cards" id="tellCards"></div>
+  <div class="tell-dismiss">タップして閉じる</div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">🃏 カード追加</div>
+    <div class="form-row">
+      <label>絵文字</label>
+      <div class="emoji-grid" id="emojiGrid"></div>
+      <input class="form-inp" id="emojiCustom" placeholder="絵文字を直接入力 🍎" style="margin-top:8px;text-align:center;" oninput="onEmojiInput(this)">
+    </div>
+    <div class="form-row">
+      <label>カード名</label>
+      <input class="form-inp" id="cardName" placeholder="例: りんご">
+    </div>
+    <div class="form-row">
+      <label>カテゴリ</label>
+      <select class="form-inp" id="cardCat">
+        <option value="食べ物">🍽️ 食べ物・飲み物</option>
+        <option value="活動">🎯 活動・遊び</option>
+        <option value="場所">📍 場所</option>
+        <option value="気持ち">💭 気持ち・状態</option>
+        <option value="その他">📦 その他</option>
+      </select>
+    </div>
+    <div class="form-acts">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-save" onclick="saveCard()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyBp8FWLMw6PFXj-gm4o3K7WV1ooqX57LF4",
+  authDomain:"haisetu-check.firebaseapp.com",
+  projectId:"haisetu-check"
+});
+const db=firebase.firestore();
+const C_CARDS='pecs_cards',C_LOG='pecs_log',C_PERSONS='pecs_persons';
+
+// STATE
+let cards=[],stripItems=[],persons=[],logs=[];
+let selCat='すべて',editId=null,selEmoji='🍎';
+let dragCard=null,dragGhostEl=null,overStrip=false;
+
+const EMOJIS=['🍎','🍞','🍬','🧃','💧','🍚','🍙','🍕','🍦','🍩','🍰','🍫',
+  '🎵','📺','📚','🎮','🚶','🎨','⚽','🎲','✏️','🖍️','🎪','🎭',
+  '🚽','😴','🤝','🛑','😊','😢','😡','🤗','👍','❤️','🙌','💪',
+  '🏠','🏫','🚗','🌳','🏊','🛁','💊','🩺','🌟','🎁'];
+
+const DEFAULT_CARDS=[
+  {emoji:'🍎',label:'りんご',category:'食べ物'},
+  {emoji:'🍞',label:'パン',category:'食べ物'},
+  {emoji:'🍬',label:'お菓子',category:'食べ物'},
+  {emoji:'🧃',label:'ジュース',category:'食べ物'},
+  {emoji:'💧',label:'お水',category:'食べ物'},
+  {emoji:'🍚',label:'ごはん',category:'食べ物'},
+  {emoji:'🍦',label:'アイス',category:'食べ物'},
+  {emoji:'🎵',label:'音楽',category:'活動'},
+  {emoji:'📺',label:'テレビ',category:'活動'},
+  {emoji:'📚',label:'本',category:'活動'},
+  {emoji:'🎮',label:'ゲーム',category:'活動'},
+  {emoji:'🚶',label:'散歩',category:'活動'},
+  {emoji:'🎨',label:'お絵かき',category:'活動'},
+  {emoji:'⚽',label:'ボール',category:'活動'},
+  {emoji:'🚽',label:'トイレ',category:'気持ち'},
+  {emoji:'😴',label:'休憩',category:'気持ち'},
+  {emoji:'🤝',label:'手伝って',category:'気持ち'},
+  {emoji:'🛑',label:'おわり',category:'気持ち'},
+  {emoji:'😊',label:'うれしい',category:'気持ち'},
+  {emoji:'🏠',label:'おうち',category:'場所'},
+  {emoji:'🏫',label:'がっこう',category:'場所'},
+];
+
+// ===== INIT =====
+async function init(){
+  await loadPersons();
+  await loadCards();
+  renderPersonSels();
+  renderCatBar();
+  renderCardGrid();
+  renderCardList();
+  document.getElementById('logDate').value=todayStr();
+  setupDrag();
+}
+
+function todayStr(){const d=new Date();return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+function pad(n){return String(n).padStart(2,'0');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ===== PERSONS =====
+async function loadPersons(){
+  try{
+    const snap=await db.collection(C_PERSONS).orderBy('name').get();
+    persons=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!persons.length){
+      for(const name of['山田 太郎','鈴木 花子','田中 一郎']){
+        const r=await db.collection(C_PERSONS).add({name,createdAt:new Date()});
+        persons.push({id:r.id,name});
+      }
+    }
+  }catch(e){}
+}
+function renderPersonSels(){
+  const opts=persons.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+  document.getElementById('personSel').innerHTML='<option value="">利用者を選択</option>'+opts;
+  document.getElementById('logPerson').innerHTML='<option value="">全員</option>'+opts;
+}
+
+// ===== CARDS =====
+async function loadCards(){
+  try{
+    const snap=await db.collection(C_CARDS).orderBy('order').get();
+    cards=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!cards.length){
+      for(let i=0;i<DEFAULT_CARDS.length;i++){
+        const r=await db.collection(C_CARDS).add({...DEFAULT_CARDS[i],order:i,createdAt:new Date()});
+        cards.push({id:r.id,...DEFAULT_CARDS[i],order:i});
+      }
+    }
+  }catch(e){}
+}
+function getCats(){return['すべて',...new Set(cards.map(c=>c.category))];}
+function filtered(){return selCat==='すべて'?cards:cards.filter(c=>c.category===selCat);}
+
+// ===== STRIP =====
+function addToStrip(card){
+  stripItems.push({...card});
+  renderStrip();
+  updateTellBtn();
+}
+function removeFromStrip(i){
+  stripItems.splice(i,1);
+  renderStrip();
+  updateTellBtn();
+}
+function clearStrip(){stripItems=[];renderStrip();updateTellBtn();}
+function updateTellBtn(){
+  const b=document.getElementById('btnTell');
+  b.classList.toggle('disabled',stripItems.length===0);
+}
+function renderStrip(){
+  const row=document.getElementById('stripRow');
+  row.innerHTML=`<div class="strip-fixed-card">ください</div><div class="strip-arrow">←</div>`;
+  if(stripItems.length===0){
+    row.innerHTML+=`<div class="strip-slot" id="stripSlot">＋</div>`;
+  } else {
+    stripItems.forEach((card,i)=>{
+      const d=document.createElement('div');
+      d.className='strip-placed';
+      d.innerHTML=`<div class="p-emoji">${esc(card.emoji)}</div><div class="p-label">${esc(card.label)}</div><button class="p-del" onclick="removeFromStrip(${i})">×</button>`;
+      row.appendChild(d);
+    });
+    // 追加スロット
+    const slot=document.createElement('div');
+    slot.className='strip-slot';
+    slot.id='stripSlot';
+    slot.textContent='＋';
+    row.appendChild(slot);
+  }
+}
+async function tell(){
+  if(stripItems.length===0) return;
+  const personId=document.getElementById('personSel').value;
+  const personName=persons.find(p=>p.id===personId)?.name||'（未選択）';
+
+  // アニメーション
+  const tc=document.getElementById('tellCards');
+  tc.innerHTML=`<div class="tell-card-fix">ください</div>`+
+    stripItems.map(c=>`<div class="tell-card-item"><div class="te">${esc(c.emoji)}</div><div class="tl">${esc(c.label)}</div></div>`).join('');
+  document.getElementById('tellScreen').classList.add('show');
+  setTimeout(()=>document.getElementById('tellScreen').classList.remove('show'),3000);
+
+  try{
+    await db.collection(C_LOG).add({
+      personId,personName,
+      sentence:stripItems.map(c=>({emoji:c.emoji,label:c.label})),
+      timestamp:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){}
+  clearStrip();
+}
+
+// ===== CARD GRID =====
+function renderCatBar(){
+  document.getElementById('catBar').innerHTML=getCats().map(c=>
+    `<button class="cat-tab${c===selCat?' act':''}" onclick="selectCat('${esc(c)}')">${esc(c)}</button>`
+  ).join('');
+}
+function selectCat(c){selCat=c;renderCatBar();renderCardGrid();}
+function renderCardGrid(){
+  const f=filtered();
+  if(!f.length){document.getElementById('cardGrid').innerHTML='<div style="color:#aaa;grid-column:1/-1;text-align:center;padding:30px;font-size:.88rem">カードがありません</div>';return;}
+  document.getElementById('cardGrid').innerHTML=f.map(card=>
+    `<div class="pecs-card" data-id="${card.id}" data-emoji="${esc(card.emoji)}" data-label="${esc(card.label)}">
+      <div class="c-emoji">${esc(card.emoji)}</div>
+      <div class="c-label">${esc(card.label)}</div>
+    </div>`
+  ).join('');
+  setupCardListeners();
+}
+
+// ===== DRAG & DROP =====
+function setupDrag(){
+  dragGhostEl=document.getElementById('dragGhost');
+}
+function setupCardListeners(){
+  document.querySelectorAll('.pecs-card').forEach(el=>{
+    el.addEventListener('pointerdown',onCardPointerDown,{passive:false});
+  });
+}
+function getCardById(id){return cards.find(c=>c.id===id);}
+
+let dragStarted=false,dragOriginX=0,dragOriginY=0;
+
+function onCardPointerDown(e){
+  e.preventDefault();
+  const el=e.currentTarget;
+  const id=el.dataset.id;
+  dragCard=getCardById(id);
+  if(!dragCard) return;
+  dragStarted=false;
+  dragOriginX=e.clientX;
+  dragOriginY=e.clientY;
+
+  document.addEventListener('pointermove',onPointerMove,{passive:false});
+  document.addEventListener('pointerup',onPointerUp);
+  document.addEventListener('pointercancel',onPointerUp);
+  el.setPointerCapture(e.pointerId);
+}
+
+function onPointerMove(e){
+  e.preventDefault();
+  const dx=e.clientX-dragOriginX,dy=e.clientY-dragOriginY;
+  if(!dragStarted&&Math.hypot(dx,dy)>8){
+    dragStarted=true;
+    // ゴースト表示
+    dragGhostEl.querySelector('.g-emoji').textContent=dragCard.emoji;
+    dragGhostEl.querySelector('.g-label').textContent=dragCard.label;
+    dragGhostEl.style.display='flex';
+    // 元カードを半透明に
+    const orig=document.querySelector(`.pecs-card[data-id="${dragCard.id}"]`);
+    if(orig) orig.classList.add('grabbing');
+  }
+  if(!dragStarted) return;
+  dragGhostEl.style.left=e.clientX+'px';
+  dragGhostEl.style.top=e.clientY+'px';
+
+  // ストリップエリアの判定
+  const strip=document.getElementById('stripSection');
+  const r=strip.getBoundingClientRect();
+  const over=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+  strip.classList.toggle('drag-over',over);
+  overStrip=over;
+}
+
+function onPointerUp(e){
+  document.removeEventListener('pointermove',onPointerMove);
+  document.removeEventListener('pointerup',onPointerUp);
+  document.removeEventListener('pointercancel',onPointerUp);
+
+  const orig=document.querySelector(`.pecs-card[data-id="${dragCard?.id}"]`);
+  if(orig) orig.classList.remove('grabbing');
+
+  if(!dragStarted){
+    // タップ（短押し）→ そのまま追加
+    if(dragCard) addToStrip(dragCard);
+  } else {
+    // ドロップ
+    if(overStrip&&dragCard) addToStrip(dragCard);
+  }
+
+  // リセット
+  dragGhostEl.style.display='none';
+  document.getElementById('stripSection').classList.remove('drag-over');
+  overStrip=false;
+  dragCard=null;
+  dragStarted=false;
+}
+
+// ===== CARD MGMT =====
+function renderCardList(){
+  if(!cards.length){document.getElementById('cardListWrap').innerHTML='<div style="color:#aaa;text-align:center;padding:60px;font-size:.9rem">カードがありません</div>';return;}
+  document.getElementById('cardListWrap').innerHTML=cards.map(c=>`
+    <div class="card-item">
+      <div class="ci-emoji">${esc(c.emoji)}</div>
+      <div class="ci-info"><div class="ci-name">${esc(c.label)}</div><div class="ci-cat">${esc(c.category)}</div></div>
+      <div class="ci-acts">
+        <button class="btn-edit" onclick="openModal('${c.id}')">編集</button>
+        <button class="btn-del" onclick="deleteCard('${c.id}')">削除</button>
+      </div>
+    </div>`).join('');
+}
+function openModal(id=null){
+  editId=id;
+  const card=id?cards.find(c=>c.id===id):null;
+  document.getElementById('modalTitle').textContent=id?'🃏 カード編集':'🃏 カード追加';
+  document.getElementById('cardName').value=card?.label||'';
+  document.getElementById('cardCat').value=card?.category||'食べ物';
+  selEmoji=card?.emoji||'🍎';
+  document.getElementById('emojiCustom').value='';
+  renderEmojiGrid();
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function renderEmojiGrid(){
+  document.getElementById('emojiGrid').innerHTML=EMOJIS.map(e=>
+    `<button class="emoji-btn${e===selEmoji?' sel':''}" onclick="pickEmoji('${e}')">${e}</button>`
+  ).join('');
+}
+function pickEmoji(e){selEmoji=e;document.getElementById('emojiCustom').value='';renderEmojiGrid();}
+function onEmojiInput(el){if(el.value.trim()){selEmoji=el.value.trim();renderEmojiGrid();}}
+async function saveCard(){
+  const label=document.getElementById('cardName').value.trim();
+  if(!label){showToast('カード名を入力してください');return;}
+  const data={emoji:selEmoji,label,category:document.getElementById('cardCat').value};
+  try{
+    if(editId){
+      await db.collection(C_CARDS).doc(editId).update(data);
+      const i=cards.findIndex(c=>c.id===editId);
+      if(i>=0) cards[i]={...cards[i],...data};
+    } else {
+      data.order=cards.length;data.createdAt=new Date();
+      const r=await db.collection(C_CARDS).add(data);
+      cards.push({id:r.id,...data});
+    }
+    closeModal();renderCatBar();renderCardGrid();renderCardList();
+    showToast(editId?'更新しました ✓':'追加しました ✓');
+  }catch(e){showToast('保存に失敗しました');}
+}
+async function deleteCard(id){
+  if(!confirm('このカードを削除しますか？')) return;
+  try{
+    await db.collection(C_CARDS).doc(id).delete();
+    cards=cards.filter(c=>c.id!==id);
+    renderCatBar();renderCardGrid();renderCardList();
+    showToast('削除しました');
+  }catch(e){}
+}
+
+// ===== LOG =====
+async function loadLog(){
+  try{
+    const snap=await db.collection(C_LOG).orderBy('timestamp','desc').limit(300).get();
+    logs=snap.docs.map(d=>({id:d.id,...d.data(),timestamp:d.data().timestamp?.toDate()||new Date()}));
+  }catch(e){}
+}
+function renderLog(){
+  const df=document.getElementById('logDate').value;
+  const pf=document.getElementById('logPerson').value;
+  let f=logs;
+  if(df) f=f.filter(l=>{const d=l.timestamp;return d&&`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`===df;});
+  if(pf) f=f.filter(l=>l.personId===pf);
+  if(!f.length){document.getElementById('logListWrap').innerHTML='<div class="log-empty">📭 記録がありません</div>';return;}
+  document.getElementById('logListWrap').innerHTML=f.map(l=>{
+    const d=l.timestamp;
+    const t=d?`${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`:'';
+    const chips=(l.sentence||[]).map(c=>`<div class="log-chip">${esc(c.emoji)} ${esc(c.label)}</div>`).join('');
+    return `<div class="log-item">
+      <div class="log-meta"><span class="log-time">${t}</span><span class="log-person">👤 ${esc(l.personName||'')}</span></div>
+      <div class="log-chips"><div class="log-chip log-chip-fix">ください</div><span class="log-arrow">←</span>${chips}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== NAV =====
+function switchPanel(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('act'));
+  document.querySelectorAll('.btab').forEach(b=>b.classList.remove('act'));
+  document.getElementById('panel-'+id).classList.add('act');
+  document.getElementById('btab-'+id).classList.add('act');
+  if(id==='log'){loadLog().then(renderLog);}
+}
+
+// ===== TOAST =====
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show';
+  setTimeout(()=>t.className='toast',2200);
+}
+
+init();
+</script>
+</body>
+</html>

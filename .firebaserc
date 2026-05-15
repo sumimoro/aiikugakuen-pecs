@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "haisetu-check"
+  },
+  "targets": {
+    "haisetu-check": {
+      "hosting": {
+        "pecs": ["aiikugakuen-pecs"]
+      }
+    }
+  }
+}
