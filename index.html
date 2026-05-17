@@ -273,7 +273,6 @@ firebase.initializeApp({
   authDomain:"haisetu-check.firebaseapp.com",
   projectId:"haisetu-check"
 });
-firebase.auth().signInAnonymously().catch(e=>console.error("Auth error",e));
 const db=firebase.firestore();
 const C_CARDS='pecs_cards',C_LOG='pecs_log',C_PERSONS='pecs_persons';
 
@@ -618,7 +617,7 @@ function showToast(msg){
   setTimeout(()=>t.className='toast',2200);
 }
 
-init();
+firebase.auth().signInAnonymously().then(()=>init()).catch(e=>{console.error("Auth error",e);init();});
 </script>
 </body>
 </html>
